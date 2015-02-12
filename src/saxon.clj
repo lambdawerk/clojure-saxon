@@ -271,6 +271,11 @@
   [^XdmNode nd]
   (Navigator/getPath (.getUnderlyingNode nd)))
 
+(defn get-attr-value
+  "Get the value of attribute `attr` of `el`. `el` must be an element."
+  [^XdmNode el attr]
+  (.getAttributeValue el (QName. attr)))
+
 ;(def #^{:private true} 
 ;    axis-map
 ;        {:ancestor            Axis/ANCESTOR           
