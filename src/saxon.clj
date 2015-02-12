@@ -11,17 +11,18 @@
   (:gen-class :prefix "")
   (:use [clojure.java.io  :only (file)]
         [clojure.string   :only (join)])
-  (:import 
+  (:import
     java.net.URL
-    net.sf.saxon.FeatureKeys
+    net.sf.saxon.lib.FeatureKeys
     (java.io File InputStream OutputStream Reader StringReader Writer)
     (javax.xml.transform.stream StreamSource)
     (javax.xml.transform Source)
-    (net.sf.saxon.s9api Axis Destination Processor Serializer 
-                        Serializer$Property XPathCompiler XPathSelector 
-                        XdmDestination XdmValue XdmItem XdmNode XdmNodeKind 
+    (net.sf.saxon.s9api Axis Destination Processor Serializer
+                        Serializer$Property XPathCompiler XPathSelector
+                        XdmDestination XdmValue XdmItem XdmNode XdmNodeKind
                         XdmAtomicValue XQueryCompiler XQueryEvaluator QName)
-    (net.sf.saxon.om Navigator NodeInfo)))
+    (net.sf.saxon.tree.util Navigator)
+    (net.sf.saxon.om NodeInfo)))
 
 ;;
 ;; Utilities
