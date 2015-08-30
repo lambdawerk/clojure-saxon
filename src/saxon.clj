@@ -380,11 +380,39 @@
     (get-class-constant OccurrenceIndicator occurrence-indicator)))
 
 (defmacro defextfn
-  [fn-name uri arg-types result-type & body]
+  "Define a Saxon integrated extension function.
+
+  For information on integrated extension functions, see:
+
+  http://www.saxonica.com/documentation/index.html#!extensibility/integratedfunctions
+
+  Arguments:
+
+    fn-name     - The name of the function.
+    fn-ns       - The namespace to add the function into.
+    arg-types   - The argument types (OccurrenceIndicator & ItemType)
+                  the function takes.
+    result-type - The result type (OccurrenceIndicator & ItemType) of the
+                  function.
+    body        - The body of the function.
+
+  Example:
+
+    (defextfn has-class
+      'http://github.com/eerohele'
+      [[:one :any-node] [:one :string]] ; Takes one node arg and one string arg.
+      [:one :boolean] ; Returns one boolean value.
+      (let [[el class-name] (map #(.itemAt % 0) args)]
+        (XdmAtomicValue.
+          (boolean (dita/has-class? (str class-name) el)))))
+
+    ; Example use of has-class? extension function :
+    ; (has-class? 'map/topicref' el)"
+  [fn-name fn-ns arg-types result-type & body]
   `(defn ~fn-name []
      (reify ExtensionFunction
        (getName [this]
-                (QName. ~uri (str '~fn-name)))
+                (QName. ~fn-ns (str '~fn-name)))
        (getResultType [this]
                       (apply make-sequence-type ~result-type))
        (getArgumentTypes [this]
