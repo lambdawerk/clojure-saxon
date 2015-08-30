@@ -10,7 +10,7 @@
   "Clojure Saxon wrapper"
   (:gen-class :prefix "")
   (:use [clojure.java.io  :only (file)]
-        [clojure.string   :only (join)])
+        [clojure.string   :only (join upper-case lower-case)])
   (:import
     java.net.URL
     net.sf.saxon.lib.FeatureKeys
@@ -20,7 +20,9 @@
     (net.sf.saxon.s9api Axis Destination Processor Serializer
                         Serializer$Property XPathCompiler XPathSelector
                         XdmDestination XdmValue XdmItem XdmNode XdmNodeKind
-                        XdmAtomicValue XQueryCompiler XQueryEvaluator QName)
+                        XdmAtomicValue XQueryCompiler XQueryEvaluator QName
+                        ExtensionFunction SequenceType ItemType
+                        OccurrenceIndicator)
     (net.sf.saxon.tree.util Navigator)
     (net.sf.saxon.om NodeInfo)))
 
@@ -331,3 +333,61 @@
   [^XdmNode nd]
   (.equals (.getNodeKind nd) XdmNodeKind/PROCESSING_INSTRUCTION))
 
+; Integrated extension functions
+
+(defn- replace-str
+  "A version of clojure.string/replace that takes the input string as the last
+  argument so that this function can be composed."
+  [match replacement s]
+  (clojure.string/replace s match replacement))
+
+(def ^:private constantize-keyword
+  "Takes a :keyword-like-this and turns it into a Java-style
+  CONSTANT_LIKE_THIS."
+  (comp upper-case (partial replace-str #"-" "_") name))
+
+(defn ^:private get-static-fields-as-keywords
+  "Get a list of all static fields in a class as keywords. Example:
+
+  => (get-static-fields-as-keywords Math)
+  (:e :pi)"
+  [cls]
+  (map #((comp keyword (partial replace-str #"_" "-") lower-case :name)
+         (bean %))
+       (seq (:fields (bean cls)))))
+
+(defn ^:private get-class-constant
+  "Get the value of a public static field of a Java class. Takes a keyword
+  and assumes that the field is a constant and therefore uses all caps. Example:
+
+  => (get-class-constant Math :pi)
+  3.141592653589793"
+  [cls field]
+  (eval (read-string
+          (str (.getName cls) "/" (constantize-keyword field)))))
+
+(defn make-sequence-type
+  "A wrapper for Saxon's SequenceType.makeSequenceType() method. Takes
+  arguments in the reverse order to the original method because it feel
+  more pleasant to say `[:one :boolean]` than `[:boolean :one]`."
+  [occurrence-indicator item-type]
+  {:pre [(some #{occurrence-indicator}
+               (get-static-fields-as-keywords OccurrenceIndicator))
+         (some #{item-type}
+               (get-static-fields-as-keywords ItemType))]}
+  (SequenceType/makeSequenceType
+    (get-class-constant ItemType item-type)
+    (get-class-constant OccurrenceIndicator occurrence-indicator)))
+
+(defmacro defextfn
+  [fn-name uri arg-types result-type & body]
+  `(defn ~fn-name []
+     (reify ExtensionFunction
+       (getName [this]
+                (QName. ~uri (str '~fn-name)))
+       (getResultType [this]
+                      (apply make-sequence-type ~result-type))
+       (getArgumentTypes [this]
+                         (into-array
+                           (map (partial apply make-sequence-type) ~arg-types)))
+       (call [this args] (do ~@body)))))
