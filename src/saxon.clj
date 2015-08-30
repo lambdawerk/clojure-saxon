@@ -270,7 +270,7 @@
 
 (defn get-attr-value
   "Get the value of attribute `attr` of `el`. `el` must be an element."
-  [^XdmNode el attr]
+  [^String attr ^XdmNode el]
   (.getAttributeValue el (QName. attr)))
 
 ;(def #^{:private true} 
