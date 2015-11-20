@@ -394,21 +394,21 @@
                   the function takes.
     result-type - The result type (OccurrenceIndicator & ItemType) of the
                   function.
+    arguments   - A vector of the arguments the XPath function receives.
     body        - The body of the function.
 
   Example:
 
     (defextfn has-class
-      'http://github.com/eerohele'
+      \"http://github.com/eerohele\"
       [[:one :any-node] [:one :string]] ; Takes one node arg and one string arg.
-      [:one :boolean] ; Returns one boolean value.
-      (let [[el class-name] (map #(.itemAt % 0) args)]
-        (XdmAtomicValue.
-          (boolean (dita/has-class? (str class-name) el)))))
+      [:one :boolean]                   ; Returns one boolean value.
+      [el class-name]                   ; The args to the XPath function.
+      (XdmAtomicValue. (boolean (dita/has-class? (str class-name) el))))
 
     ; Example use of has-class? extension function :
     ; (has-class? 'map/topicref' el)"
-  [fn-name fn-ns arg-types result-type & body]
+  [fn-name fn-ns arg-types result-type arguments & body]
   `(defn ~fn-name []
      (reify ExtensionFunction
        (getName [this]
@@ -418,4 +418,5 @@
        (getArgumentTypes [this]
                          (into-array
                            (map (partial apply make-sequence-type) ~arg-types)))
-       (call [this args] (do ~@body)))))
+       (call [this args#] (let [~arguments (unwrap-xdm-items args#)]
+                           (do ~@body))))))
