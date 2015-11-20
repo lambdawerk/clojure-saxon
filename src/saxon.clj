@@ -85,7 +85,7 @@
   [#^XdmItem val]
   (.isAtomicValue val))
 
-(defn- unwrap-xdm-items
+(defn unwrap-xdm-items
   "Makes XdmItems Clojure-friendly. A Saxon XdmItem is either an atomic value 
   (number, string, URI) or a node. 
   
