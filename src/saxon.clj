@@ -116,7 +116,7 @@
   (let    [cmplr  (.newXsltCompiler proc)
            exe    (.compile cmplr   (xml-source f))]
 
-    (fn [#^XdmNode xml & params]
+    (fn [initial & params]
       (let  [xdm-dest    (XdmDestination.)
              transformer (.load exe)] ; created anew, is thread-safe
         (when params
@@ -124,10 +124,12 @@
                 ks    (keys prms)]
             (doseq [k ks]
               (.setParameter transformer
-                (QName. ^String (name k))
-                (XdmAtomicValue. (k prms))))))
+                             (QName. ^String (name k))
+                             (XdmAtomicValue. (k prms))))))
+        (if (instance? XdmNode initial)
+          (.setInitialContextNode transformer initial)
+          (.setInitialTemplate transformer (QName. ^String initial)))
         (doto transformer
-          (.setInitialContextNode xml)
           (.setDestination xdm-dest)
           (.transform))
         (.getXdmNode xdm-dest)))))
