@@ -17,5 +17,6 @@
 (deftest test-node-path
   (is (= "/root/a[1]/b[1]" 
          (->> (s/compile-xml xml)
-           (s/query "(//element())[3]")
-           s/node-path))))
+              (s/query "(//element())[3]")
+              first
+              s/node-path))))
